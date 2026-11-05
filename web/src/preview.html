@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FairyGUI Preview</title>
+<style>
+:root {
+  --bg: #f7f8fa; --panel: #ffffff; --border: #dfe1e5; --text: #1e1f22; --muted: #6c707e; --accent: #3574f0;
+  --stage: #e3e5e9; --checker: #d6d9de; --btn: #ffffff; --btn-on: #d4e2ff; --err-bg: #fff0f0; --err: #c4302b;
+  --hover: #ff9f1c; --sel: #3574f0; --added: #208a3c; --removed: #db3b4b; --changed: #e08a00;
+}
+body.dark {
+  --bg: #1e1f22; --panel: #2b2d30; --border: #393b40; --text: #dfe1e5; --muted: #868a91; --accent: #548af7;
+  --stage: #26282c; --checker: #2c2f34; --btn: #2b2d30; --btn-on: #2e436e; --err-bg: #3c2526; --err: #f2777a;
+  --added: #5fb865; --removed: #f2777a; --changed: #f0a732;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+  font: 12px/1.4 -apple-system, "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+#app { display: flex; flex-direction: column; height: 100%; }
+#toolbar { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; padding: 4px 8px;
+  border-bottom: 1px solid var(--border); background: var(--panel); flex: none; }
+#toolbar .group { display: flex; gap: 3px; align-items: center; }
+.lbl { color: var(--muted); }
+button, select { font: inherit; color: var(--text); background: var(--btn); border: 1px solid var(--border);
+  border-radius: 4px; padding: 1px 7px; height: 22px; cursor: pointer; max-width: 240px; }
+button.on { background: var(--btn-on); border-color: var(--accent); }
+.sep { width: 1px; height: 16px; background: var(--border); }
+#ctrlBar { flex: none; border-bottom: 1px solid var(--border); background: var(--panel); max-height: 30vh; overflow: auto; }
+#ctrlBar.hidden { display: none; }
+#controllers { display: flex; flex-wrap: wrap; gap: 3px 12px; padding: 4px 8px; }
+#controllers:empty { display: none; }
+#controllers .group { display: flex; gap: 4px; align-items: center; }
+#changesBar { flex: none; display: flex; flex-wrap: wrap; gap: 4px; padding: 4px 8px; border-bottom: 1px solid var(--border);
+  background: var(--panel); max-height: 20vh; overflow: auto; }
+.chip { height: 20px; padding: 0 7px; border-radius: 10px; font-size: 11px; display: inline-flex; align-items: center; }
+.c-added { color: var(--added); } .c-removed { color: var(--removed); } .c-changed { color: var(--changed); }
+button.chip.c-added { border-color: var(--added); } button.chip.c-removed { border-color: var(--removed); } button.chip.c-changed { border-color: var(--changed); }
+#errors { display: none; padding: 4px 8px; background: var(--err-bg); color: var(--err); border-bottom: 1px solid var(--border);
+  white-space: pre-wrap; max-height: 80px; overflow: auto; flex: none; }
+#panes { flex: 1; display: flex; min-height: 0; }
+.pane { flex: 1; display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--border); }
+.pane:last-child { border-right: 0; }
+.paneTitle { display: none; flex: none; padding: 3px 8px; font-weight: 600; border-bottom: 1px solid var(--border);
+  background: var(--panel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.diff .paneTitle { display: block; }
+.stage { position: relative; flex: 1; overflow: auto; background-color: var(--stage);
+  background-image: linear-gradient(45deg, var(--checker) 25%, transparent 25%, transparent 75%, var(--checker) 75%),
+    linear-gradient(45deg, var(--checker) 25%, transparent 25%, transparent 75%, var(--checker) 75%);
+  background-size: 20px 20px; background-position: 0 0, 10px 10px; }
+.stage.fit { overflow: hidden; }
+.sizer { position: relative; margin: 24px; }
+.root { position: absolute; left: 0; top: 0; transform-origin: 0 0; outline: 1px dashed var(--muted); }
+#status { flex: none; padding: 3px 8px; border-top: 1px solid var(--border); background: var(--panel); color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 22px; }
+#status b { color: var(--text); font-weight: 600; }
+.box { position: absolute; pointer-events: none; z-index: 10; display: none; }
+.hoverBox { outline: 2px solid var(--hover); }
+.peerBox { outline: 2px dashed var(--hover); }
+.selBox { outline: 2px solid var(--sel); outline-offset: 1px; }
+.loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); pointer-events: none; }
+
+/* rendered FairyGUI content */
+.fg { position: absolute; left: 0; top: 0; }
+.fg-text { display: flex; }
+.fg-text > span { display: block; width: 100%; overflow-wrap: anywhere; }
+.fg-clip { overflow: hidden; }
+.fg-ghost { opacity: .35; outline: 1px dashed #e0408a; }
+.fg-ph { outline: 1px dashed #e0408a; color: #e0408a; font: 11px sans-serif; display: flex; align-items: center;
+  justify-content: center; text-align: center; overflow: hidden; background: rgba(224, 64, 138, .08); }
+.fg-empty-loader { outline: 1px dashed rgba(127, 127, 127, .7); }
+.fg-plain-graph { width: 100%; height: 100%; outline: 1px dashed rgba(127, 127, 127, .45); outline-offset: -1px; }
+.fg-diff-added, .fg-diff-removed, .fg-diff-changed { outline-style: solid; outline-width: calc(3px / var(--z, 1)); outline-offset: calc(2px / var(--z, 1)); }
+.fg-diff-added { outline-color: var(--added); }
+.fg-diff-removed { outline-color: var(--removed); }
+.fg-diff-changed { outline-color: var(--changed); }
+body.outlines .fg { outline: 1px dotted rgba(53, 116, 240, .55); }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <div class="group"><span class="lbl">Zoom</span>
+      <select id="zoom"><option value="fit">Fit</option><option value="0.25">25%</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.5">150%</option><option value="2">200%</option></select>
+    </div>
+    <div class="group" id="screenGroup" style="display:none"><span class="lbl">Screen</span><select id="screen"></select></div>
+    <div class="group">
+      <button id="btnHidden" title="Show elements with visible=false">Hidden</button>
+      <button id="btnOutlines" title="Outline every element">Outlines</button>
+      <button id="btnEmpty" class="on" title="Mark loaders without a URL">Empty loaders</button>
+      <button id="btnPlainGraphs" title="Paint graphs that have no fill color white, as the FairyGUI editor does. Off: draw them as dashed outlines (they are usually hit areas or runtime VFX holders).">Plain graphs</button>
+      <button id="btnReload" title="Reload all files from disk">Reload</button>
+    </div>
+    <div class="sep"></div>
+    <button id="btnCtrl" class="on" title="Show the controllers of this component" style="display:none">Controllers</button>
+  </div>
+  <div id="ctrlBar"><div id="controllers"></div></div>
+  <div id="changesBar" style="display:none"></div>
+  <div id="errors"></div>
+  <div id="panes"></div>
+  <div id="status">&nbsp;</div>
+</div>
+<!--SCRIPT-->
+</body>
+</html>

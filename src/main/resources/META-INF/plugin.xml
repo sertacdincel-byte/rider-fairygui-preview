@@ -1,0 +1,44 @@
+<idea-plugin>
+  <id>com.bytelab.fguipreview</id>
+  <name>FairyGUI Preview</name>
+  <version>1.1.0</version>
+  <vendor>Bytelab</vendor>
+  <description><![CDATA[
+    <p>Live visual preview of FairyGUI component XML files, next to the XML editor.</p>
+    <ul>
+      <li>Editor / Split / Preview toggle, like the Markdown preview. The preview follows unsaved edits as you type.</li>
+      <li>Renders nested components, images (9-slice, tile, tint, flip), text, graphs, loaders, lists, groups,
+        Label / Button / ProgressBar overrides, gears and relations.</li>
+      <li>Switch the component's controller pages and preview on the project's device resolutions.</li>
+      <li>Click an element to jump to it in the XML; moving the caret highlights the element in the preview;
+        double-click a nested component to open its file.</li>
+      <li>Diffs of a component (Git log, local changes, compare with branch) offer a "FairyGUI preview" viewer:
+        both revisions side by side with added, removed and changed elements marked.</li>
+    </ul>
+    <p>Works on any FairyGUI editor project (a folder with a <code>.fairy</code> file and an <code>assets</code> folder).
+      Everything runs locally in the IDE's embedded browser.</p>
+  ]]></description>
+  <change-notes><![CDATA[
+    <p><b>1.1.0</b></p>
+    <ul>
+      <li>Diff viewer: "FairyGUI preview" in the diff window shows both revisions side by side and marks added, removed and changed elements.</li>
+      <li>Layout matches the FairyGUI editor much more closely: relations now follow FairyGUI's own event order (pivots, centre/right edges kept on resize, percent and ext types, groups, component-level relations), auto-sized text is measured with the project font, controller actions and specific home pages are applied, and gears on Label/Button instances drive their title.</li>
+    </ul>
+    <p><b>1.0.0</b></p>
+    <ul>
+      <li>First release.</li>
+    </ul>
+  ]]></change-notes>
+  <idea-version since-build="262"/>
+
+  <dependencies>
+    <plugin id="com.intellij.modules.platform"/>
+    <module name="intellij.libraries.jcef"/>
+    <module name="intellij.platform.ui.jcef"/>
+  </dependencies>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <fileEditorProvider implementation="com.bytelab.fguipreview.FguiEditorProvider"/>
+    <diff.DiffTool implementation="com.bytelab.fguipreview.FguiDiffTool"/>
+  </extensions>
+</idea-plugin>
