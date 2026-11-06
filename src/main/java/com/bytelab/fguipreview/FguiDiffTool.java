@@ -12,6 +12,9 @@ import com.intellij.diff.requests.DiffRequest;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.event.DocumentEvent;
+import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
@@ -28,7 +31,9 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.JComponent;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import java.util.List;
+import java.util.function.Supplier;
 
 /** "FairyGUI preview" viewer in the diff window: both revisions of a component rendered side by side. */
 public final class FguiDiffTool implements FrameDiffTool {
@@ -143,21 +148,46 @@ public final class FguiDiffTool implements FrameDiffTool {
             }
             List<DiffContent> contents = request.getContents();
             List<String> titles = request.getContentTitles();
-            StringBuilder js = new StringBuilder("FguiPreview.initDiff({file:").append(Json.str(target.relPath()))
-                    .append(",dark:").append(!JBColor.isBright());
-            for (int i = 0; i < 2; i++) {
-                String title = i < titles.size() && titles.get(i) != null ? titles.get(i) : (i == 0 ? "Before" : "After");
-                DiffContent c = contents.get(i);
-                String source = c instanceof DocumentContent dc ? ReadAction.compute(() -> dc.getDocument().getText()) : null;
-                js.append(i == 0 ? ",left:{" : ",right:{")
-                        .append("title:").append(Json.str(title))
-                        .append(",source:").append(Json.str(source))
-                        .append(",emptyText:").append(Json.str("File does not exist in this revision"))
-                        .append('}');
-            }
-            String init = js.append("});").toString();
-            FguiPage page = new FguiPage(project, target.assets(), () -> init, null, null, disposable);
+            Document[] docs = new Document[2];
+            for (int i = 0; i < 2; i++) if (contents.get(i) instanceof DocumentContent dc) docs[i] = dc.getDocument();
+            Supplier<String> init = () -> {
+                StringBuilder js = new StringBuilder("FguiPreview.initDiff({file:").append(Json.str(target.relPath()))
+                        .append(",dark:").append(!JBColor.isBright());
+                for (int i = 0; i < 2; i++) {
+                    String title = i < titles.size() && titles.get(i) != null ? titles.get(i) : (i == 0 ? "Before" : "After");
+                    js.append(i == 0 ? ",left:{" : ",right:{")
+                            .append("title:").append(Json.str(title))
+                            .append(",source:").append(Json.str(textOf(docs[i])))
+                            .append(",emptyText:").append(Json.str("File does not exist in this revision"))
+                            .append('}');
+                }
+                return js.append("});").toString();
+            };
+            String ownPath = target.assets().getPath() + "/" + target.relPath();
+            FguiPage page = new FguiPage(project, target.assets(), init, null, ownPath, disposable);
             component = page.getComponent();
+
+            // A working-copy side is the file's live document: follow edits and reloads from disk.
+            for (int i = 0; i < 2; i++) {
+                Document doc = docs[i];
+                if (doc == null) continue;
+                int side = i;
+                Timer timer = new Timer(250, e -> {
+                    if (page.isLoaded()) page.execute("FguiPreview.setSource(" + Json.str(textOf(doc)) + "," + side + ")");
+                });
+                timer.setRepeats(false);
+                Disposer.register(disposable, timer::stop);
+                doc.addDocumentListener(new DocumentListener() {
+                    @Override
+                    public void documentChanged(@NotNull DocumentEvent event) {
+                        timer.restart();
+                    }
+                }, disposable);
+            }
+        }
+
+        private static @Nullable String textOf(@Nullable Document doc) {
+            return doc == null ? null : ReadAction.compute(doc::getText);
         }
 
         @Override

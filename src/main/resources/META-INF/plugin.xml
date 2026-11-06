@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.bytelab.fguipreview</id>
   <name>FairyGUI Preview</name>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
   <vendor>Bytelab</vendor>
   <description><![CDATA[
     <p>Live visual preview of FairyGUI component XML files, next to the XML editor.</p>
@@ -19,6 +19,10 @@
       Everything runs locally in the IDE's embedded browser.</p>
   ]]></description>
   <change-notes><![CDATA[
+    <p><b>1.2.1</b></p>
+    <ul>
+      <li>The "FairyGUI preview" diff viewer follows the working copy: editing the file or changing it on disk re-renders that side and updates the added / removed / changed marks.</li>
+    </ul>
     <p><b>1.2.0</b></p>
     <ul>
       <li>Files added in a pull request (or otherwise missing from the working copy) now get the "FairyGUI preview" diff viewer.</li>

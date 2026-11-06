@@ -8,14 +8,14 @@ FairyGUI editöründe yapılan her ekran `<proje>/assets/<Paket>/` altında bir 
 
 | Özellik | Ayrıntı |
 |---|---|
-| Canlı | Önizleme kaydedilmemiş değişiklikleri yazarken takip eder. Projedeki başka bir component, görsel ya da `package.xml` kaydedilince yenilenir. |
+| Canlı | Önizleme kaydedilmemiş değişiklikleri yazarken takip eder. Projedeki başka bir component, görsel ya da `package.xml` kaydedilince yenilenir. Diff görüntüleyicisi de çalışma kopyası tarafını takip eder. |
 | Çizim | İç içe component'ler (her derinlikte, paketler arası), görseller (9-slice, tile, tint, flip, fill), text ve rich text (UBB, stroke, gölge, shrink / ellipsis), graph'lar, loader'lar (görsel ya da component, tüm fill modları), list'ler (column, row, flow, pagination), group'lar, movie clip ve Spine için yer tutucular |
 | Component mantığı | Label / Button / ProgressBar / Slider instance override'ları (title, icon, renk, font boyutu, checked, value), `<property>` override'ları, instance üzerinde ayarlanan controller sayfaları, controller `change_page` action'ları, "specific" ana sayfalar, gear'lar (display, display2, XY, size, look, color, icon, text, font size), maskeler |
 | Yerleşim | Relation'lar FairyGUI'nin kendi olay sırasıyla (`RelationItem` mantığı) yeniden oynatılır: parent ve kardeş hedefler, percent ve ext tipleri, boyut değişince pivot kayması, eleman kendi boyutunu değiştirince kenarın korunması, group taşımaları ve doğrudan `<component>` altındaki relation'lar. Otomatik boyutlu yazılar projenin fontuyla ölçülür. |
 | Controller'lar | Component'in controller'larından istediğin sayfayı araç çubuğundan seç; gear'lar ona göre değişir |
 | Ekranlar | Tam ekran component'ler, projenin Adaptation ayarlarındaki her cihaz çözünürlüğünde önizlenebilir; relation'lar yeni boyuta göre yeniden çalışır |
 | Gezinme | Bir elemana tıklayınca XML'de imleç o elemanın etiketine gider. İmleci hareket ettirince eleman önizlemede vurgulanır. İç içe bir component'e çift tıklayınca kendi dosyası açılır. Durum çubuğu fare altındaki elemanın yolunu, türünü, konumunu, boyutunu ve kaynak dosyasını gösterir. |
-| Diff | Bir component'in herhangi bir diff'inde (Git log → Show Diff, Commit / Local Changes, Compare with Branch…) diff penceresinin görüntüleyici seçicisinden **FairyGUI preview**'ı seç. İki revizyon yan yana çizilir; eklenen (yeşil), silinen (kırmızı) ve değişen (turuncu) elemanlar çerçevelenir ve panellerin üstünde listelenir; yakınlaştırma, kaydırma ve fare vurgusu senkron kalır. |
+| Diff | Bir component'in herhangi bir diff'inde (Git log → Show Diff, Commit / Local Changes, Compare with Branch…) diff penceresinin görüntüleyici seçicisinden **FairyGUI preview**'ı seç. İki revizyon yan yana çizilir; eklenen (yeşil), silinen (kırmızı) ve değişen (turuncu) elemanlar çerçevelenir ve panellerin üstünde listelenir; yakınlaştırma, kaydırma ve fare vurgusu senkron kalır. Taraflardan biri çalışma kopyasıysa (Local Changes, Compare with Branch) dosya düzenlenince ya da diskte değişince o taraf yeniden çizilir; iç component'ler ve görseller kaydedilince iki taraf da yenilenir. |
 | Seçenekler | Yakınlaştırma (sığdır, %25–200), `visible="false"` elemanları göster, her elemanın çerçevesini çiz, URL'si olmayan loader'ları işaretle, dolgu rengi olmayan graph'ları boya |
 
 Her şey IDE'nin gömülü tarayıcısında, yerelde çalışır ve sadece FairyGUI projesinin kendi dosyalarını okur.
@@ -145,7 +145,7 @@ Eklenti `preview.html`'i yükler ve sayfayla, sayfaya `FguiHost.request(json)` o
 | `{op:"nav", id}` | İmleci elemanın etiketine taşır |
 | `{op:"open", file}` | Başka bir component'i editörde açar |
 
-Yollar projenin `assets` klasörüne görelidir. Eklenti sayfada `FguiPreview.init / initDiff / setSource / invalidate / highlight` çağırır.
+Yollar projenin `assets` klasörüne görelidir. Eklenti sayfada `FguiPreview.init / initDiff / setSource / invalidate / highlight` çağırır; diff'te `setSource(text, side)` 0 (sol) ya da 1 (sağ) tarafı değiştirir.
 
 ### Sayfayı IDE olmadan test etme
 

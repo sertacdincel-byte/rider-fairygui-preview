@@ -8,14 +8,14 @@ Every screen made in the FairyGUI editor is saved as a component `.xml` under `<
 
 | Feature | Details |
 |---|---|
-| Live | The preview follows unsaved edits as you type. Saving another component, image or `package.xml` in the project refreshes it. |
+| Live | The preview follows unsaved edits as you type. Saving another component, image or `package.xml` in the project refreshes it. The diff viewer follows the working-copy side too. |
 | Rendering | Nested components (any depth, across packages), images (9-slice, tile, tint, flip, fill), text and rich text (UBB, stroke, shadow, shrink / ellipsis), graphs, loaders (images or components, all fill modes), lists (column, row, flow, pagination), groups, movie clip and Spine placeholders |
 | Component logic | Label / Button / ProgressBar / Slider instance overrides (title, icon, color, font size, checked, value), `<property>` overrides, controller pages set on instances, controller `change_page` actions, specific home pages, gears (display, display2, XY, size, look, color, icon, text, font size), masks |
 | Layout | Relations replay FairyGUI's own event order (the `RelationItem` logic): parent and sibling targets, percent and ext types, pivot shifts on resize, edges kept when an element resizes itself, group moves, and relations directly under `<component>`. Auto-sized text is measured with the project font. |
 | Controllers | Pick any page of the component's controllers from the toolbar; gears follow |
 | Screens | Full-screen components can be previewed at every device resolution in the project's Adaptation settings; relations re-run for the new size |
 | Navigation | Click an element to put the caret on its tag in the XML. Moving the caret highlights the element in the preview. Double-click a nested component to open its file. The status bar shows the hovered element's path, type, position, size and source file. |
-| Diff | In any diff of a component (Git log → Show Diff, Commit / Local Changes, Compare with Branch…), pick **FairyGUI preview** in the diff window's viewer selector. Both revisions render side by side; added (green), removed (red) and changed (orange) elements are outlined and listed above the panes; zoom, scroll and hover stay in sync. |
+| Diff | In any diff of a component (Git log → Show Diff, Commit / Local Changes, Compare with Branch…), pick **FairyGUI preview** in the diff window's viewer selector. Both revisions render side by side; added (green), removed (red) and changed (orange) elements are outlined and listed above the panes; zoom, scroll and hover stay in sync. When one side is the working copy (Local Changes, Compare with Branch), that side re-renders as the file is edited or changes on disk; saving a nested component or image refreshes both sides. |
 | Options | Zoom (fit, 25–200%), show `visible="false"` elements, outline every element, mark loaders without a URL, paint graphs that have no fill color |
 
 Everything runs locally in the IDE's embedded browser and reads only the FairyGUI project's own files.
@@ -145,7 +145,7 @@ The plugin loads `preview.html` and talks to it through a `JBCefJSQuery` exposed
 | `{op:"nav", id}` | Moves the caret to the element's tag |
 | `{op:"open", file}` | Opens another component in the editor |
 
-Paths are relative to the project's `assets` folder. The plugin calls `FguiPreview.init / initDiff / setSource / invalidate / highlight` on the page.
+Paths are relative to the project's `assets` folder. The plugin calls `FguiPreview.init / initDiff / setSource / invalidate / highlight` on the page; in a diff, `setSource(text, side)` replaces side 0 (left) or 1 (right).
 
 ### Testing the page without the IDE
 

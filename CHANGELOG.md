@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 — 2026-11-06
+
+- The diff viewer follows the working copy: when one side of a component diff is the file itself (Local Changes, Compare with Branch), editing it or changing it on disk re-renders that side and updates the added / removed / changed marks.
+
 ## 1.2.0 — 2026-11-06
 
 - Diffs of component files that do not exist in the working copy (for example a file added in a pull request) now offer the "FairyGUI preview" viewer. The file path is taken from the revision content's original path when there is no local file.

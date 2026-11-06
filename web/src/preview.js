@@ -1785,8 +1785,12 @@ window.FguiPreview = {
     }
     start(o);
   },
-  setSource(text) {
-    app.views[app.views.length - 1].source = text;
+  /** side: view index in a diff (0 left, 1 right); the last view when omitted */
+  setSource(text, side) {
+    const v = app.views[side === undefined ? app.views.length - 1 : side];
+    if (!v || v.source === text) return;
+    v.source = text;
+    v.empty = false;
     render();
   },
   invalidate(paths) {
