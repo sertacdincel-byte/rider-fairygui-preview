@@ -10,6 +10,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(process.argv[2] || '.');
 const assets = join(projectRoot, 'assets');
 const port = Number(process.argv[3] || 47912);
+// Like the plugin, the page's last UI state is handed back on the next load (the plugin does it when it recreates a dropped browser).
+let lastState = null;
 
 function index() {
   const packages = [];
@@ -32,6 +34,7 @@ function handle(req) {
     return buf.length + ':' + buf.subarray(off, off + len).toString('base64');
   }
   if (req.op === 'nav' || req.op === 'open') { console.log(req.op, req.file, req.id || ''); return 'ok'; }
+  if (req.op === 'state') { lastState = req.value; return 'ok'; }
   throw new Error('unknown op ' + req.op);
 }
 
@@ -57,7 +60,8 @@ createServer((req, res) => {
     const dark = url.searchParams.get('dark') !== '0';
     const rev = url.searchParams.get('rev');
     const page = readFileSync(join(here, '..', '..', 'src', 'main', 'resources', 'fguipreview', 'preview.html'), 'utf8');
-    const host = `window.FguiHost = { request: (json) => fetch('/api', { method: 'POST', body: json }).then(async (r) => { const t = await r.text(); if (!r.ok) throw new Error(t); return t; }) };`;
+    const host = `window.FguiHost = { request: (json) => fetch('/api', { method: 'POST', body: json }).then(async (r) => { const t = await r.text(); if (!r.ok) throw new Error(t); return t; }) };` +
+      (lastState ? `window.FguiState = ${JSON.stringify(lastState)};` : '');
     let harness;
     if (rev) {
       let old = null;

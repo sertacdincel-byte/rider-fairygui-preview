@@ -43,7 +43,7 @@ Bu adres her zaman en yeni GitHub release'ini gösterir; o release'teki `updateP
 
 ### Kullanım
 
-FairyGUI projesindeki herhangi bir component `.xml` dosyasını aç, sonra editörün sağ üst köşesinde **Preview** ya da **Split**'e tıkla. Seçim dosya başına hatırlanır. Önizlemenin arkasındaki tarayıcı ancak önizleme ilk kez gösterildiğinde oluşturulur; XML görünümünde tuttuğun dosyalar ek bir yük getirmez.
+FairyGUI projesindeki herhangi bir component `.xml` dosyasını aç, sonra editörün sağ üst köşesinde **Preview** ya da **Split**'e tıkla. Seçim dosya başına hatırlanır. Önizlemenin arkasındaki tarayıcı ancak önizleme gösterildiğinde oluşturulur; XML görünümünde tuttuğun dosyalar ek bir yük getirmez. Her önizleme tarayıcısı ayrı bir Chromium sürecidir; bir dakika boyunca gizli kalan (başka sekme ya da Editor düzeni) önizlemenin tarayıcısı bırakılır. Tekrar gösterildiğinde sayfa aynı zoom, ekran, controller sayfaları ve seçeneklerle yeniden kurulur (kaydırma konumu baştan başlar).
 
 ### Kaldırma
 
@@ -74,7 +74,7 @@ Bir `.xml` dosyası şu koşulların hepsi sağlanınca önizleme alır:
 - **Safe area ve çentikler modellenmez.** *Screen* listesi yalnızca tasarım çözünürlüğü ölçeklemesini (`ScaleWithScreenSize`, genişlik ya da yüksekliğe uyma) uygular ve relation'ları yeniden çalıştırır. Projenin safe-area kodunun runtime'da yaptığı hiçbir şey yansımaz.
 - **Transition'lar oynatılmaz**; group'ların gelişmiş yerleşimleri (group üzerinde `layout="row"` vb.) yeniden hesaplanmaz. Elemanlar XML'in koyduğu yerde kalır. Group sınırları üyelerinden yeniden hesaplanmaz.
 - **Yazı ölçüleri tarayıcınındır.** Otomatik boyutlu yazılar projenin varsayılan fontuyla tarayıcıda ölçülür; bu, TextMeshPro'dan birkaç piksel farklı olabilir ve bir etikete bağlı öğeler o kadar kayabilir.
-- **Diff'te sadece karşılaştırılan dosya revizyondan gelir.** İç içe component'ler, görseller ve `package.xml` çalışma kopyasından okunur; iç içe bir component'teki değişiklik iki tarafta da görünür.
+- **Diff'te sadece karşılaştırılan dosya revizyondan gelir.** İç içe component'ler, görseller ve `package.xml` çalışma kopyasından okunur; iç içe bir component'teki değişiklik iki tarafta da görünür. Bir PR yepyeni bir ekran eklediğinde, onun yeni iç component'leri ve görselleri genelde çalışma kopyanda henüz yoktur; branch'i checkout edene kadar eksik (pembe kutu) görünürler.
 - **Kayıtlı controller sayfaları kaydedildiği gibi gösterilir.** Önizleme her controller'ın dosyada seçili olan sayfasıyla başlar; tasarımcının seçili bıraktığı bir overlay sayfası (örneğin "ödeme başarılı" durumu) üstte görünür. Sayfayı araç çubuğundan değiştir.
 - **Dolgu rengi olmayan graph'lar varsayılan olarak kesikli çerçeveyle çizilir.** Bunlar genellikle tıklama alanları ya da runtime'da eklenen VFX'lerin yer tutucularıdır. FairyGUI'nin kendisi onları beyaz boyar; **Plain graphs** düğmesi de aynısını yapar.
 - **Renkler yaklaşıktır.** Oyun linear color space'te çizilir; önizleme, FairyGUI editörü gibi gamma renkleri gösterir. Yazılar projenin varsayılan fontunu kullanır; TextMeshPro outline ve face dilate CSS ile yaklaşık olarak çizilir.
@@ -91,9 +91,9 @@ Bir `.xml` dosyası şu koşulların hepsi sağlanınca önizleme alır:
 | Kırmızı şerit "XML error in …" | XML okunamıyor (çoğu zaman düzenlemenin ortasında). Önizleme, XML tekrar okunabilir olana kadar son geçerli hâli gösterir. |
 | Kırmızı şerit "Missing resources (…)" | XML'in kullandığı bir görsel ya da component projenin `package.xml`'inde ya da diskte yok. Eksikler pembe kesikli kutu olarak çizilir. |
 | Önizleme başka bir dosyadaki değişikliği almadı | O dosyayı kaydet ya da önizleme araç çubuğunda **Reload**'a bas. |
-| Diff penceresinde **FairyGUI preview** yok | Görüntüleyici yalnızca karşılaştırılan dosya bir FairyGUI projesindeki component ise sunulur. Diff araç çubuğunun görüntüleyici seçicisinden bir kez seç; diff penceresi seçimi hatırlar. |
+| Diff penceresinde **FairyGUI preview** yok | Görüntüleyici yalnızca karşılaştırılan dosya bir FairyGUI projesindeki component ise sunulur. Diff araç çubuğunun görüntüleyici seçicisinden bir kez seç; diff penceresi seçimi hatırlar. Bir component diff'i yine de sunmuyorsa debug log'u aç (aşağıda) ve `idea.log`'da "FairyGUI preview not offered" ara. |
 
-**Log'lar**: **Help → Show Log in Explorer** → `idea.log` dosyasında `com.bytelab.fguipreview` ara. **Sayfa hataları**: önizlemeye sağ tıkla → **Open DevTools**.
+**Log'lar**: **Help → Show Log in Explorer** → `idea.log` dosyasında `com.bytelab.fguipreview` ara. Daha fazla ayrıntı için **Help → Diagnostic Tools → Debug Log Settings…** içine `#com.bytelab.fguipreview` ekle. **Sayfa hataları**: önizlemeye sağ tıkla → **Open DevTools**.
 
 ---
 

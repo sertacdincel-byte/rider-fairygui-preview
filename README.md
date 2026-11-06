@@ -43,7 +43,7 @@ Download `FguiPreview-<version>.zip` from [Releases](https://github.com/sertacdi
 
 ### Use
 
-Open any component `.xml` inside a FairyGUI project, then click **Preview** or **Split** in the editor's top-right corner. The choice is remembered per file. The browser behind the preview is created only when the preview is first shown, so files you keep in the XML view cost nothing extra.
+Open any component `.xml` inside a FairyGUI project, then click **Preview** or **Split** in the editor's top-right corner. The choice is remembered per file. The browser behind the preview is created only when the preview is shown, so files you keep in the XML view cost nothing extra. Each preview browser is a separate Chromium process; once a preview has been hidden for a minute (another tab, or the Editor layout) its browser is released, and showing it again rebuilds the page with the same zoom, screen, controller pages and options (the scroll position starts over).
 
 ### Uninstall
 
@@ -74,7 +74,7 @@ Read these before trusting the preview for layout decisions.
 - **Safe area and notches are not modeled.** The *Screen* dropdown only applies the design-resolution scaling (`ScaleWithScreenSize`, match width or height) and re-runs relations. Anything driven by the project's safe-area code at runtime is not reflected.
 - **Transitions are not played** and advanced group layouts (`layout="row"` etc. on a group) are not re-run; elements stay where the XML puts them. Group bounds are not recomputed from their members.
 - **Text metrics are the browser's.** Auto-sized text is measured with the project's default font in the browser, which can differ by a few pixels from TextMeshPro; things related to a label can shift by that much.
-- **In a diff, only the compared file comes from the revision.** Nested components, images and `package.xml` are read from the working copy, so a change inside a nested component shows up on both sides.
+- **In a diff, only the compared file comes from the revision.** Nested components, images and `package.xml` are read from the working copy, so a change inside a nested component shows up on both sides. When a pull request adds a whole screen, its new nested components and images are usually not in your working copy yet and appear as missing (pink boxes) until you check out the branch.
 - **Saved controller pages are shown as saved.** The preview starts on the page each controller has selected in the file, so an overlay page selected by the designer (for example a "payment successful" state) appears on top. Switch pages in the toolbar.
 - **Graphs without a fill color are drawn as dashed outlines by default.** They are usually hit areas or holders for VFX added at runtime. FairyGUI itself paints them white; the **Plain graphs** button does the same.
 - **Colors are approximate.** The game renders in linear color space; the preview, like the FairyGUI editor, shows gamma colors. Text uses the project's default font; TextMeshPro outline and face dilation are approximated with CSS.
@@ -91,9 +91,9 @@ Read these before trusting the preview for layout decisions.
 | Red bar "XML error in …" | The XML does not parse (often mid-edit). The preview keeps the last valid version until it parses again. |
 | Red bar "Missing resources (…)" | An image or component referenced by the XML is not in the project's `package.xml` or not on disk. Missing items are drawn as pink dashed boxes. |
 | The preview did not pick up a change to another file | Save that file, or press **Reload** in the preview toolbar. |
-| No **FairyGUI preview** in the diff window | The viewer is offered only when the compared file is a component inside a FairyGUI project. Pick it once in the diff toolbar's viewer selector; the diff window remembers the choice. |
+| No **FairyGUI preview** in the diff window | The viewer is offered only when the compared file is a component inside a FairyGUI project. Pick it once in the diff toolbar's viewer selector; the diff window remembers the choice. If a component diff still does not offer it, turn on debug logging (below) and check `idea.log` for "FairyGUI preview not offered". |
 
-**Logs**: **Help → Show Log in Explorer** → `idea.log`, search for `com.bytelab.fguipreview`. **Page errors**: right-click the preview → **Open DevTools**.
+**Logs**: **Help → Show Log in Explorer** → `idea.log`, search for `com.bytelab.fguipreview`. For more detail, add `#com.bytelab.fguipreview` in **Help → Diagnostic Tools → Debug Log Settings…**. **Page errors**: right-click the preview → **Open DevTools**.
 
 ---
 

@@ -74,8 +74,8 @@ function readImage(path) {
       const ext = path.slice(path.lastIndexOf('.') + 1).toLowerCase();
       const url = URL.createObjectURL(new Blob([bytes], { type: 'image/' + (ext === 'jpg' ? 'jpeg' : ext) }));
       const img = new Image();
-      img.onload = () => { imgDone.set(path, img); resolve(img); };
-      img.onerror = () => { imgDone.set(path, null); resolve(null); };
+      img.onload = () => { URL.revokeObjectURL(url); imgDone.set(path, img); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); imgDone.set(path, null); resolve(null); };
       img.src = url;
     }), () => { imgDone.set(path, null); return null; });
     imageCache.set(path, p);
@@ -1025,6 +1025,12 @@ function applyTint(c, tint) {
   ctx.globalCompositeOperation = 'destination-in';
   ctx.drawImage(copy, 0, 0);
   ctx.restore();
+  copy.width = copy.height = 0;
+}
+
+// Canvas pixels are not garbage collected promptly; zero them when a render replaces them.
+function releaseCanvases(root) {
+  for (const c of root.querySelectorAll('canvas')) c.width = c.height = 0;
 }
 
 function color(s) {
@@ -1428,6 +1434,7 @@ async function render() {
     const def = defs[i];
     if (def === null) {
       v.empty = true;
+      releaseCanvases(v.root);
       v.root.replaceChildren();
       v.loading.style.display = 'flex';
       v.loading.textContent = v.emptyText || 'No file in this revision';
@@ -1455,6 +1462,7 @@ async function render() {
       continue;
     }
     node.__fg = { id: '', name: app.file.split('/').pop(), tag: 'component', file: app.file, depth: -1, top: '', chain: [], res: app.file };
+    releaseCanvases(v.root);
     v.root.replaceChildren(node);
     v.root.style.width = L.w + 'px';
     v.root.style.height = L.h + 'px';
@@ -1514,7 +1522,7 @@ function buildControllerUi(defs) {
       sel.appendChild(o);
     }
     sel.value = app.ctrl.has(c.name) ? app.ctrl.get(c.name) : (c.pages[c.selected] || c.pages[0]).id;
-    sel.addEventListener('change', () => { app.ctrl.set(c.name, sel.value); render(); });
+    sel.addEventListener('change', () => { app.ctrl.set(c.name, sel.value); saveState(); render(); });
     g.append(l, sel);
     host.appendChild(g);
   }
@@ -1687,34 +1695,57 @@ function onHover(v, el) {
 
 // ------------------------------------------------------------------ toolbar
 
-function toggle(id, key, rerender) {
-  const b = $(id);
-  b.classList.toggle('on', !!app.opts[key]);
-  b.addEventListener('click', () => {
+const TOGGLES = [['btnHidden', 'hidden', true], ['btnOutlines', 'outlines', false], ['btnEmpty', 'empty', true], ['btnPlainGraphs', 'plainGraphs', true]];
+
+function syncToolbar() {
+  for (const [id, key] of TOGGLES) $(id).classList.toggle('on', !!app.opts[key]);
+  document.body.classList.toggle('outlines', !!app.opts.outlines);
+  $('zoom').value = app.opts.zoom;
+  const hidden = !app.ctrlOpen;
+  $('ctrlBar').classList.toggle('hidden', hidden);
+  $('btnCtrl').classList.toggle('on', !hidden);
+}
+
+// The IDE may drop a hidden preview's browser; it hands this state back when it recreates the page.
+function saveState() {
+  request({ op: 'state', value: JSON.stringify({ opts: app.opts, ctrl: [...app.ctrl], ctrlOpen: app.ctrlOpen }) }).catch(() => {});
+}
+
+function restoreState() {
+  let s = null;
+  try { s = window.FguiState ? JSON.parse(window.FguiState) : null; } catch (e) { s = null; }
+  if (!s) return;
+  if (s.opts) Object.assign(app.opts, s.opts);
+  if (Array.isArray(s.ctrl)) app.ctrl = new Map(s.ctrl);
+  if (typeof s.ctrlOpen === 'boolean') app.ctrlOpen = s.ctrlOpen;
+}
+
+for (const [id, key, rerender] of TOGGLES) {
+  $(id).addEventListener('click', () => {
     app.opts[key] = !app.opts[key];
-    b.classList.toggle('on', app.opts[key]);
-    if (key === 'outlines') document.body.classList.toggle('outlines', app.opts.outlines);
+    syncToolbar();
+    saveState();
     if (rerender) render();
   });
 }
-toggle('btnHidden', 'hidden', true);
-toggle('btnOutlines', 'outlines', false);
-toggle('btnEmpty', 'empty', true);
-toggle('btnPlainGraphs', 'plainGraphs', true);
+app.ctrlOpen = true;
+syncToolbar();
 $('btnReload').addEventListener('click', () => { clearCaches(null); render(); });
 $('btnCtrl').addEventListener('click', () => {
-  const hidden = $('ctrlBar').classList.toggle('hidden');
-  $('btnCtrl').classList.toggle('on', !hidden);
+  app.ctrlOpen = !app.ctrlOpen;
+  syncToolbar();
+  saveState();
   if (app.opts.zoom === 'fit') { computeZoom(); applyZoom(); }
 });
 $('zoom').addEventListener('change', (e) => {
   const before = app.views.length ? app.views[0].zoomValue : 1;
   app.opts.zoom = e.target.value;
+  saveState();
   computeZoom();
   const after = app.views.length ? app.views[0].zoomValue : 1;
   if ((after > 1 || before > 1) && Math.abs(after - before) > 0.01) render(); else applyZoom();
 });
-$('screen').addEventListener('change', (e) => { app.opts.screen = e.target.value; render(); });
+$('screen').addEventListener('change', (e) => { app.opts.screen = e.target.value; saveState(); render(); });
 
 function clearCaches(paths) {
   if (!paths) {
@@ -1727,6 +1758,8 @@ function clearCaches(paths) {
 function start(o) {
   app.file = o.file;
   app.dark = !!o.dark;
+  restoreState();
+  syncToolbar();
   document.body.classList.toggle('dark', app.dark);
   document.body.classList.toggle('diff', app.mode === 'diff');
   P.loaded = loadProject().catch((e) => { showErrors(['Cannot read the FairyGUI project: ' + (e && e.message ? e.message : e)]); throw e; });

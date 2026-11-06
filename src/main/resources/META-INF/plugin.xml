@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.bytelab.fguipreview</id>
   <name>FairyGUI Preview</name>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
   <vendor>Bytelab</vendor>
   <description><![CDATA[
     <p>Live visual preview of FairyGUI component XML files, next to the XML editor.</p>
@@ -19,6 +19,11 @@
       Everything runs locally in the IDE's embedded browser.</p>
   ]]></description>
   <change-notes><![CDATA[
+    <p><b>1.2.0</b></p>
+    <ul>
+      <li>Files added in a pull request (or otherwise missing from the working copy) now get the "FairyGUI preview" diff viewer.</li>
+      <li>Less memory: a preview hidden for a minute releases its embedded browser and comes back with the same zoom, controller pages and options; canvases and image data are freed as soon as a render replaces them.</li>
+    </ul>
     <p><b>1.1.0</b></p>
     <ul>
       <li>Diff viewer: "FairyGUI preview" in the diff window shows both revisions side by side and marks added, removed and changed elements.</li>

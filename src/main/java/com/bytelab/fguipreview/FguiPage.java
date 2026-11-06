@@ -47,10 +47,12 @@ import java.util.function.Supplier;
 
 /**
  * The preview page in a JCEF browser and its bridge to the FairyGUI project on disk.
- * The browser is created the first time the component is shown.
+ * The browser is created when the component is shown and dropped after it has been hidden for a while;
+ * each browser is a Chromium renderer process.
  */
 final class FguiPage implements Disposable {
     private static final Logger LOG = Logger.getInstance(FguiPage.class);
+    private static final int RELEASE_AFTER_MS = 60_000;
     private static volatile String pageHtml;
 
     private final Project project;
@@ -59,10 +61,12 @@ final class FguiPage implements Disposable {
     private final @Nullable Consumer<String> navigate;
     private final @Nullable String ownPath;
     private final JPanel component = new JPanel(new BorderLayout());
-    private final AtomicBoolean started = new AtomicBoolean();
     private final Set<String> pendingInvalid = ConcurrentHashMap.newKeySet();
     private final Timer invalidateTimer;
+    private final Timer releaseTimer;
     private volatile @Nullable JBCefBrowser browser;
+    private @Nullable Disposable browserScope;
+    private volatile @Nullable String uiState;
     private volatile boolean loaded;
     private volatile boolean disposed;
     private String cachedPath;
@@ -84,13 +88,21 @@ final class FguiPage implements Disposable {
         Disposer.register(parent, this);
         invalidateTimer = new Timer(300, e -> pushInvalidate());
         invalidateTimer.setRepeats(false);
+        releaseTimer = new Timer(RELEASE_AFTER_MS, e -> releaseBrowser());
+        releaseTimer.setRepeats(false);
 
         if (!JBCefApp.isSupported()) {
             component.add(new JBLabel("The FairyGUI preview needs the embedded browser (JCEF), which is not available in this IDE.", SwingConstants.CENTER), BorderLayout.CENTER);
             return;
         }
         component.addHierarchyListener(e -> {
-            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && component.isShowing()) ensureBrowser();
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) == 0) return;
+            if (component.isShowing()) {
+                releaseTimer.stop();
+                ensureBrowser();
+            } else if (browser != null && !disposed) {
+                releaseTimer.restart();
+            }
         });
         String assetsPath = assets.getPath() + "/";
         project.getMessageBus().connect(this).subscribe(VirtualFileManager.VFS_CHANGES, new BulkFileListener() {
@@ -135,12 +147,13 @@ final class FguiPage implements Disposable {
             component.revalidate();
             return;
         }
+        Disposable scope = Disposer.newDisposable(this, "FairyGUI preview browser");
         JBCefBrowser b = JBCefBrowser.createBuilder().setEnableOpenDevToolsMenuItem(true).build();
-        Disposer.register(this, b);
-        browser = b;
+        Disposer.register(scope, b);
         JBCefJSQuery query = JBCefJSQuery.create((JBCefBrowserBase) b);
-        Disposer.register(this, query);
+        Disposer.register(scope, query);
         query.addHandler(this::handle);
+        AtomicBoolean started = new AtomicBoolean();
         b.getJBCefClient().addLoadHandler(new CefLoadHandlerAdapter() {
             @Override
             public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
@@ -148,17 +161,39 @@ final class FguiPage implements Disposable {
                 if (!frame.isMain() || url == null || url.isEmpty() || url.startsWith("about:")) return;
                 if (!started.compareAndSet(false, true)) return;
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    if (disposed) return;
+                    if (disposed || browser != b) return;
+                    String state = uiState;
                     execute("window.FguiHost={request:function(req){return new Promise(function(resolve,reject){"
                             + query.inject("req", "resolve", "function(code,msg){reject(new Error(msg))}")
-                            + "});}};" + initScript.get());
+                            + "});}};" + (state != null ? "window.FguiState=" + Json.str(state) + ";" : "") + initScript.get());
                     loaded = true;
                 });
             }
         }, b.getCefBrowser());
+        browserScope = scope;
+        browser = b;
+        loaded = false;
+        pendingInvalid.clear();
         b.loadHTML(html);
         component.add(b.getComponent(), BorderLayout.CENTER);
         component.revalidate();
+    }
+
+    private void releaseBrowser() {
+        JBCefBrowser b = browser;
+        Disposable scope = browserScope;
+        if (b == null || scope == null || disposed || component.isShowing()) return;
+        loaded = false;
+        browser = null;
+        browserScope = null;
+        component.remove(b.getComponent());
+        Disposer.dispose(scope);
+        synchronized (this) {
+            cachedPath = null;
+            cachedBytes = null;
+        }
+        component.revalidate();
+        component.repaint();
     }
 
     private void pushInvalidate() {
@@ -189,6 +224,10 @@ final class FguiPage implements Disposable {
                 }
                 case "open" -> {
                     open(req.get("file"));
+                    yield new JBCefJSQuery.Response("ok");
+                }
+                case "state" -> {
+                    uiState = req.get("value");
                     yield new JBCefJSQuery.Response("ok");
                 }
                 default -> new JBCefJSQuery.Response(null, 400, "unknown op " + op);
@@ -227,7 +266,16 @@ final class FguiPage implements Disposable {
         byte[] all = bytesOf(f);
         int off = Math.max(0, Math.min(all.length, parseInt(offset, 0)));
         int end = Math.min(all.length, off + Math.max(0, parseInt(length, all.length)));
-        return all.length + ":" + Base64.getEncoder().encodeToString(Arrays.copyOfRange(all, off, end));
+        String out = all.length + ":" + Base64.getEncoder().encodeToString(Arrays.copyOfRange(all, off, end));
+        if (end >= all.length) dropCachedBytes(all);
+        return out;
+    }
+
+    private synchronized void dropCachedBytes(byte[] bytes) {
+        if (cachedBytes == bytes) {
+            cachedPath = null;
+            cachedBytes = null;
+        }
     }
 
     private synchronized byte[] bytesOf(VirtualFile f) throws IOException {
@@ -280,5 +328,6 @@ final class FguiPage implements Disposable {
     public void dispose() {
         disposed = true;
         invalidateTimer.stop();
+        releaseTimer.stop();
     }
 }
