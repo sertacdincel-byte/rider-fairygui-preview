@@ -24,11 +24,30 @@ Her şey IDE'nin gömülü tarayıcısında, yerelde çalışır ve sadece Fairy
 
 ## Kurulum
 
-**Diskten**: Rider → **Settings → Plugins → ⚙ → Install Plugin from Disk…** → `FguiPreview-<sürüm>.zip` dosyasını seç (zip'i açma) → yeniden başlat.
+### Eklenti deposundan (önerilen)
 
-**Kullanım**: FairyGUI projesindeki herhangi bir component `.xml` dosyasını aç, sonra editörün sağ üst köşesinde **Preview** ya da **Split**'e tıkla. Seçim dosya başına hatırlanır. Önizlemenin arkasındaki tarayıcı ancak önizleme ilk kez gösterildiğinde oluşturulur; XML görünümünde tuttuğun dosyalar ek bir yük getirmez.
+Güncellemeler IDE üzerinden otomatik gelir.
 
-**Kaldırma**: **Settings → Plugins → Installed → FairyGUI Preview → Uninstall**, ardından yeniden başlat.
+1. Rider → **Settings → Plugins → ⚙ → Manage Plugin Repositories… → +** ile şu adresi ekle:
+   ```
+   https://github.com/sertacdincel-byte/rider-fairygui-preview/releases/latest/download/updatePlugins.xml
+   ```
+2. **Marketplace** sekmesinde *FairyGUI Preview* ara → **Install** → Rider'ı yeniden başlat.
+3. Kontrol: FairyGUI projesindeki bir component `.xml` dosyasını aç → editörün sağ üst köşesinde **Split**'e tıkla. Component'in çizilmiş hali XML'in yanında görünmeli.
+
+Bu adres her zaman en yeni GitHub release'ini gösterir; o release'teki `updatePlugins.xml` de aynı release'in zip'ini işaret eder. Yeni sürümler normal eklenti güncellemesi olarak görünür.
+
+### Diskten
+
+[Releases](https://github.com/sertacdincel-byte/rider-fairygui-preview/releases) sayfasından `FguiPreview-<sürüm>.zip` dosyasını indir (zip'i açma) → **Settings → Plugins → ⚙ → Install Plugin from Disk…** → zip'i seç → yeniden başlat. Bu yolla güncellemeler otomatik gelmez.
+
+### Kullanım
+
+FairyGUI projesindeki herhangi bir component `.xml` dosyasını aç, sonra editörün sağ üst köşesinde **Preview** ya da **Split**'e tıkla. Seçim dosya başına hatırlanır. Önizlemenin arkasındaki tarayıcı ancak önizleme ilk kez gösterildiğinde oluşturulur; XML görünümünde tuttuğun dosyalar ek bir yük getirmez.
+
+### Kaldırma
+
+**Settings → Plugins → Installed → FairyGUI Preview → Uninstall**, ardından yeniden başlat.
 
 ### Hangi dosyalar önizleme alır
 

@@ -24,11 +24,30 @@ Everything runs locally in the IDE's embedded browser and reads only the FairyGU
 
 ## Install
 
-**From disk**: Rider → **Settings → Plugins → ⚙ → Install Plugin from Disk…** → pick `FguiPreview-<version>.zip` (do not unzip) → restart.
+### From the plugin repository (recommended)
 
-**Use**: open any component `.xml` inside a FairyGUI project, then click **Preview** or **Split** in the editor's top-right corner. The choice is remembered per file. The browser behind the preview is created only when the preview is first shown, so files you keep in the XML view cost nothing extra.
+Updates arrive automatically through the IDE.
 
-**Uninstall**: **Settings → Plugins → Installed → FairyGUI Preview → Uninstall**, then restart.
+1. Rider → **Settings → Plugins → ⚙ → Manage Plugin Repositories… → +**, add:
+   ```
+   https://github.com/sertacdincel-byte/rider-fairygui-preview/releases/latest/download/updatePlugins.xml
+   ```
+2. Search for *FairyGUI Preview* in the **Marketplace** tab → **Install** → restart Rider.
+3. Check: open a component `.xml` in a FairyGUI project → click **Split** in the editor's top-right corner. The rendered component should appear next to the XML.
+
+The URL always points to the newest GitHub release, whose `updatePlugins.xml` names that release's zip. New versions show up as normal plugin updates.
+
+### From disk
+
+Download `FguiPreview-<version>.zip` from [Releases](https://github.com/sertacdincel-byte/rider-fairygui-preview/releases) (do not unzip) → **Settings → Plugins → ⚙ → Install Plugin from Disk…** → pick the zip → restart. Updates do not arrive automatically this way.
+
+### Use
+
+Open any component `.xml` inside a FairyGUI project, then click **Preview** or **Split** in the editor's top-right corner. The choice is remembered per file. The browser behind the preview is created only when the preview is first shown, so files you keep in the XML view cost nothing extra.
+
+### Uninstall
+
+**Settings → Plugins → Installed → FairyGUI Preview → Uninstall**, then restart.
 
 ### Which files get a preview
 
